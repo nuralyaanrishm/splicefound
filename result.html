@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Result - Image Splicing Detection</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Add subtle shadows and spacing */
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            font-weight: 600;
+            color: #bbb !important;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #1db954 !important; /* Spotify green for modern tech vibe */
+        }
+
+        .container {
+            max-width: 960px;
+        }
+
+        h2.text-center {
+            color: #1db954;
+            font-weight: 700;
+        }
+
+        .card {
+            background-color: #1e1e1e;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(29, 185, 84, 0.4);
+        }
+
+        .card-title {
+            color: #1db954;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        .card-text {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            color: #ccc;
+        }
+
+        h6 {
+            color: #ccc;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        img.img-fluid {
+            border-radius: 8px;
+            border: 2px solid #1db954;
+            max-height: 300px;
+            object-fit: contain;
+            background-color: #222;
+            transition: transform 0.3s ease;
+        }
+
+        img.img-fluid:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #1db954;
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 576px) {
+            img.img-fluid {
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Image Splicing Detection</a>
+        <div class="navbar-nav ml-auto">
+            <a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
+            <a class="nav-item nav-link" href="{{ url_for('history') }}">History</a>
+            <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Detection Result</h2>
+        <div class="card p-4">
+            <h5 class="card-title">Result: {{ detection.result }}</h5>
+            <p class="card-text">Tamper Ratio: {{ "%.4f"|format(detection.tamper_ratio) }}</p>
+
+            <div class="row text-center">
+                <div class="col-md-6 mb-4">
+                    <h6>Original Image</h6>
+                    <img src="{{ url_for('static', filename='uploads/' + detection.original) }}" class="img-fluid">
+                </div>
+                <div class="col-md-6 mb-4">
+                    <h6>ELA Image</h6>
+                    <img src="{{ url_for('static', filename='uploads/' + detection.ela) }}" class="img-fluid">
+                </div>
+                <div class="col-md-6 mb-4">
+                    <h6>Black & White Mask</h6>
+                    <img src="{{ url_for('static', filename='uploads/' + detection.mask) }}" class="img-fluid">
+                </div>
+                <div class="col-md-6 mb-4">
+                    <h6>Result</h6>
+                    <img src="{{ url_for('static', filename='uploads/' + detection.highlighted) }}" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
