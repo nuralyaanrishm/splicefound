@@ -5,3 +5,7 @@ Werkzeug==2.0.1
 Pillow==9.5.0
 fpdf==1.7.2
 opencv-python==4.8.1.78
+
+git add requirements.txt Procfile
+git commit -m "Fix Procfile for Flask on Render"
+git push
