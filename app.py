@@ -22,6 +22,9 @@ from flask import send_file
 from datetime import datetime
 from PIL import ExifTags
 
+from flask import Flask
+app = Flask(__name__)
+
 # === Configuration ===
 db_config = {
     'host': 'localhost',
