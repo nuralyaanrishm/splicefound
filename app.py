@@ -3,6 +3,7 @@ import io
 import secrets
 import mysql.connector
 import numpy as np
+import re
 import cv2
 from PIL import Image, ImageChops, ImageEnhance, ImageFilter
 from flask import Flask, request, render_template, redirect, url_for, flash, session, send_file
@@ -21,6 +22,11 @@ from fpdf import FPDF
 from flask import send_file
 from datetime import datetime
 from PIL import ExifTags
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_bcrypt import Bcrypt
+import mysql.connector
+from werkzeug.security import check_password_hash
+
 
 # === Configuration ===
 db_config = {
@@ -31,10 +37,13 @@ db_config = {
     'port': 3306,
     'auth_plugin': 'mysql_native_password'
 }
+db = mysql.connector.connect(**db_config)
 
 app = Flask(__name__, template_folder=os.path.abspath('templates'))
 app.secret_key = secrets.token_hex(16)
 CORS(app)
+
+bcrypt = Bcrypt(app)
 
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -59,28 +68,162 @@ def login_required(f):
 def home():
     return render_template('home.html')
 
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        hashed_password = generate_password_hash(password)
-        
+        profession = request.form['profession']
+        reason = request.form['reason']
+        security_question = request.form['security_question']
+        security_answer = request.form['security_answer']
+
+        # Hash password and security answer
+        password_hash = generate_password_hash(password)
+        security_answer_hash = generate_password_hash(security_answer.lower())  # normalize to lowercase
+
+        # Check if email exists
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
         if cursor.fetchone():
-            flash('Email already registered. Please login.')
-            return redirect(url_for('login'))
+            flash('Email already registered.')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('signup'))
 
-        cursor.execute("INSERT INTO users (email, password) VALUES (%s, %s)", (email, hashed_password))
+        # Insert user
+        cursor.execute("""
+            INSERT INTO users (email, password, profession, reason, security_question, security_answer_hash)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (email, password_hash, profession, reason, security_question, security_answer_hash))
         conn.commit()
         cursor.close()
         conn.close()
-        flash('Account created! Please log in.')
+
+        flash('Sign up successful! Please log in.')
         return redirect(url_for('login'))
 
     return render_template('signup.html')
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        # Step 1: User submits email, fetch security question
+        if 'email' in request.form and 'security_answer' not in request.form:
+            email = request.form['email']
+            conn = mysql.connector.connect(**db_config)
+            cursor = conn.cursor()
+            cursor.execute("SELECT security_question FROM users WHERE email = %s", (email,))
+            row = cursor.fetchone()
+            cursor.close()
+            conn.close()
+
+            if row:
+                security_question = row[0]
+                # Return the form with security question and hidden email field
+                return render_template('forgot_password.html', security_question=security_question, email=email)
+            else:
+                flash('Email not found.')
+                return redirect(url_for('forgot_password'))
+
+        # Step 2: User submits security answer, verify and allow reset
+        elif 'security_answer' in request.form:
+            security_answer = request.form['security_answer']
+            email = request.form.get('email')
+            if not email:
+                flash('Email missing. Please try again.')
+                return redirect(url_for('forgot_password'))
+
+            conn = mysql.connector.connect(**db_config)
+            cursor = conn.cursor()
+            cursor.execute("SELECT security_answer_hash FROM users WHERE email = %s", (email,))
+            row = cursor.fetchone()
+
+            if row and check_password_hash(row[0], security_answer.lower()):
+                cursor.close()
+                conn.close()
+                # Redirect to reset password page
+                return redirect(url_for('reset_password', email=email))
+            else:
+                cursor.close()
+                conn.close()
+                flash('Incorrect answer. Please try again.')
+                # Re-show security question form with email and question
+                cursor = conn.cursor()
+                cursor.execute("SELECT security_question FROM users WHERE email = %s", (email,))
+                row = cursor.fetchone()
+                cursor.close()
+                if row:
+                    return render_template('forgot_password.html', security_question=row[0], email=email)
+                else:
+                    return redirect(url_for('forgot_password'))
+
+    # GET request: no security question shown yet
+    return render_template('forgot_password.html', security_question=None)
+
+
+def is_valid_password(password):
+    if len(password) < 8:
+        return False
+    if not re.search(r'[A-Z]', password):
+        return False
+    if not re.search(r'[a-z]', password):
+        return False
+    if not re.search(r'\d', password):
+        return False
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False
+    return True
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    email = request.args.get('email')
+    if not email:
+        flash("Email missing.")
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+
+        # Validate password
+        if not is_valid_password(new_password):
+            flash("Password must be at least 8 characters long and include uppercase, lowercase, number, and symbol.")
+            return redirect(url_for('reset_password', email=email))
+
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        # Get current password hash
+        cursor.execute("SELECT password FROM users WHERE email = %s", (email,))
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            conn.close()
+            flash("User not found.")
+            return redirect(url_for('forgot_password'))
+
+        current_password_hash = row[0]
+
+        # Check if new password matches old password
+        if check_password_hash(current_password_hash, new_password):
+            cursor.close()
+            conn.close()
+            flash("New password cannot be the same as the old password.")
+            return redirect(url_for('reset_password', email=email))
+
+        # If different and valid, update password
+        hashed_password = generate_password_hash(new_password)
+        cursor.execute("UPDATE users SET password = %s WHERE email = %s", (hashed_password, email))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        flash("Password has been reset successfully! Please log in.")
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html', email=email)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -282,7 +425,13 @@ def generate_report(detection_id):
     pdf.cell(0, 10, "Detection Technique: Error Level Analysis (ELA)", ln=True)
     pdf.cell(0, 10, "Tamper Highlighting Method: Colorized Overlay", ln=True)
     pdf.cell(0, 10, "Tool Version: SpliceFound v1.0", ln=True)
-
+    pdf.ln(10)
+    
+    # Disclaimer
+    pdf.cell(0, 10, "DISCLAIMER", ln=True)
+    pdf.cell(0, 10, "Image resolution affects the accuracy of result.", ln=True)
+    pdf.cell(0, 10, "Using high resolution image may result in better detection accuracy.", ln=True)
+    
     # Save PDF to a buffer
     buf = BytesIO()
     buf.write(pdf.output(dest='S').encode('latin1'))
@@ -355,6 +504,23 @@ def analyze_image_internal(img_data, filename):
         'result': result,
         'tamper_ratio': ratio
     }
+    
+@app.route('/admin')
+def admin():
+    conn = mysql.connector.connect(**db_config)
+    cur = conn.cursor()
+    
+    # Updated query: get email, profession, reason, and upload count
+    cur.execute("""
+        SELECT users.id, users.email, users.profession, users.reason, COUNT(detections.id) as upload_count
+        FROM users
+        LEFT JOIN detections ON users.id = detections.user_id
+        GROUP BY users.id, users.email, users.profession, users.reason
+    """)
+    
+    users = cur.fetchall()
+    conn.close()
+    return render_template('admin.html', users=users)
 
 # === Start Server ===
 if __name__ == '__main__':
