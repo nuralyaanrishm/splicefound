@@ -22,9 +22,6 @@ from flask import send_file
 from datetime import datetime
 from PIL import ExifTags
 
-from flask import Flask
-app = Flask(__name__)
-
 # === Configuration ===
 db_config = {
     'host': 'localhost',
@@ -129,8 +126,26 @@ def upload_file():
 
         conn = mysql.connector.connect(**db_config)
         cur = conn.cursor()
-        cur.execute("INSERT INTO detections (user_id, image_path, result, tamper_ratio) VALUES (%s, %s, %s, %s)", 
-            (session['user_id'], filename, result['result'], float(result['tamper_ratio'])))
+        cur.execute(
+                """
+                INSERT INTO detections
+                (user_id, original_image, ela_image, mask_image, highlighted_image, result, tamper_ratio,
+                image_path, ela_path, highlighted_path)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+        (
+                session['user_id'],
+                filename,
+                f"ela_{filename}",
+                f"mask_{filename}",
+                f"highlighted_{filename}",
+                result['result'],
+                float(result['tamper_ratio']),
+                filename,               # image_path
+                f"ela_{filename}",      # ela_path
+                f"highlighted_{filename}"  # highlighted_path
+        )   
+    )   
 
         conn.commit()
         detection_id = cur.lastrowid
