@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home - Image Splicing Detection</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="#">SPLICEFOUND</a>
+        <div class="navbar-nav ml-auto d-flex">
+            <a class="nav-item nav-link" href="{{ url_for('history') }}">History</a>
+            <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2 class="text-center mb-4">Upload Image</h2>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Select Image</label>
+                        <input type="file" class="form-control-file" name="image" accept=".jpg,.jpeg,.png" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload and Analyze</button>
+                </form>
+                <div style="background-color: #f0f8ff; border-left: 4px solid #2196F3; padding: 10px 15px; margin: 10px 0; color: #333;">
+                    <span style="font-size: 1.2em;">&#9432;</span>
+                    <strong>Note:</strong> For accurate detection, please use a high-resolution image. If your image resolution is low, the result might not be accurate.
+                  </div>                  
+            </div>
+        </div>
+    </div>
+</body>
+</html>

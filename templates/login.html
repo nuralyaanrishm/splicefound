@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Login</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    </head>
+    <body>
+        <div class="container">
+            <h2>Welcome to SPLICEFOUND</h2>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" required>
+
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" required>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <div class="link" style="margin-top: 10px;">
+            <p><a href="{{ url_for('forgot_password') }}">Forgot Password?</a></p>
+            <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></p>
+        </div>
+    </div>
+</body>
+</html>

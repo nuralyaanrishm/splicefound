@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        table thead th {
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+        }
+        table tbody td {
+            vertical-align: middle;
+            text-align: center;
+        }
+        table tbody tr:hover {
+            background-color: #f1f7ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>SPLICEFOUND ADMIN DASHBOARD</h2>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-success" role="alert">
+              {{ messages[0] }}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Profession</th>
+                        <th>Reason for Using SpliceFound</th>
+                        <th>Upload Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user[0] }}</td>
+                        <td>{{ user[1] }}</td>
+                        <td>{{ user[2] or '-' }}</td>
+                        <td>{{ user[3] or '-' }}</td>
+                        <td>{{ user[4] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
