@@ -38,16 +38,22 @@
                         <label>Password</label>
                         <input type="password" class="form-control" name="password" required>
                     </div>
-                    <div class="form-group">
-                        <label>Profession</label>
-                        <input type="text" class="form-control" name="profession" placeholder="e.g., Digital Forensics Analyst, Student" required>
+                   <div class="form-group">
+                    <label>Profession</label>
+                    <select class="form-control" name="profession" required>
+                    <option value="" disabled selected>Select your profession</option>
+                    <option value="law practitioner">Law Practitioner</option>
+                    <option value="digital forensics practitioner">Digital Forensics Practitioner</option>
+                    <option value="student">Student</option>
+                    <option value="other">Other</option>
+                    </select>
                     </div>
                     <div class="form-group">
                         <label>Why do you want to use SpliceFound?</label>
                         <textarea class="form-control" name="reason" rows="3" placeholder="Briefly describe your purpose..." required></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Choose your Security Question (e.g. Your favorite color?)</label>
+                        <label>Security Question (e.g. Your favorite color?)</label>
                         <input type="text" class="form-control" name="security_question" required>
                     </div>
                     <div class="form-group">
